@@ -1,0 +1,250 @@
+{
+ "metadata": {
+  "name": "",
+  "signature": "sha256:8b78c18abf57dc092f39408d9e2aeca7c05494c3e991ffa8acb00bd50f8bc69e"
+ },
+ "nbformat": 3,
+ "nbformat_minor": 0,
+ "worksheets": [
+  {
+   "cells": [
+    {
+     "cell_type": "code",
+     "collapsed": false,
+     "input": [
+      "# import libraries and show multiple cores/engines\n",
+      "from IPython import parallel\n",
+      "clients = parallel.Client()\n",
+      "clients.block = True\n",
+      "print clients.ids"
+     ],
+     "language": "python",
+     "metadata": {},
+     "outputs": [
+      {
+       "output_type": "stream",
+       "stream": "stdout",
+       "text": [
+        "[0, 1, 2, 3]\n"
+       ]
+      }
+     ],
+     "prompt_number": 46
+    },
+    {
+     "cell_type": "code",
+     "collapsed": false,
+     "input": [
+      "# import rest of the libraries\n",
+      "import numpy as np\n",
+      "import random\n",
+      "import os\n",
+      "import sys"
+     ],
+     "language": "python",
+     "metadata": {},
+     "outputs": [],
+     "prompt_number": 47
+    },
+    {
+     "cell_type": "code",
+     "collapsed": false,
+     "input": [
+      "# create a view object\n",
+      "dview = clients.direct_view()\n",
+      "\n",
+      "# trials per core\n",
+      "N = 10\n",
+      "\n",
+      "# save 40 random prices \n",
+      "random_prices = []\n",
+      "\n",
+      "# generate random stock prices\n",
+      "for i in range(N):\n",
+      "    %px import numpy as np\n",
+      "    %px rand = np.random.random()*5+10\n",
+      "    random_prices.append(rand)\n",
+      "    rand = dview.gather('rand')\n",
+      "    print rand\n",
+      "    \n"
+     ],
+     "language": "python",
+     "metadata": {},
+     "outputs": [
+      {
+       "output_type": "stream",
+       "stream": "stdout",
+       "text": [
+        "[12.3242254626159, 11.566305120131927, 12.154693361363048, 12.620842376204873]\n",
+        "[13.542706550545166, 10.13313002624486, 13.782977061362859, 13.254420830263099]\n",
+        "[13.622786966861462, 11.544954267061943, 14.114578950981455, 13.171697071533416]"
+       ]
+      },
+      {
+       "output_type": "stream",
+       "stream": "stdout",
+       "text": [
+        "\n",
+        "[13.578091970657066, 12.992950621375446, 14.915559500229016, 11.373960058008779]\n",
+        "[12.01738883456564, 11.88719903221514, 13.77926810461216, 11.25680711229165]"
+       ]
+      },
+      {
+       "output_type": "stream",
+       "stream": "stdout",
+       "text": [
+        "\n",
+        "[12.078873665309045, 11.401193152140737, 13.536411992693038, 11.593223472585008]\n",
+        "[13.778466699860601, 10.418754514187542, 12.83433452231462, 13.525308220176788]"
+       ]
+      },
+      {
+       "output_type": "stream",
+       "stream": "stdout",
+       "text": [
+        "\n",
+        "[13.85224432102109, 10.542745158982155, 12.05134731953343, 13.204400814029025]\n",
+        "[11.373104789145245, 10.19183672639443, 14.763939566197678, 13.716894026861258]"
+       ]
+      },
+      {
+       "output_type": "stream",
+       "stream": "stdout",
+       "text": [
+        "\n",
+        "[12.56200952142981, 13.342093305452858, 14.818018591855967, 13.504686025411473]\n"
+       ]
+      }
+     ],
+     "prompt_number": 98
+    },
+    {
+     "cell_type": "code",
+     "collapsed": false,
+     "input": [
+      "# find mean of the random prices distribution\n",
+      "mu = np.mean(random_prices)\n"
+     ],
+     "language": "python",
+     "metadata": {},
+     "outputs": [],
+     "prompt_number": 99
+    },
+    {
+     "cell_type": "code",
+     "collapsed": false,
+     "input": [
+      "# find std dev of the random_prices distribution\n",
+      "sigma = np.std(random_prices)\n",
+      "sigma"
+     ],
+     "language": "python",
+     "metadata": {},
+     "outputs": [
+      {
+       "metadata": {},
+       "output_type": "pyout",
+       "prompt_number": 92,
+       "text": [
+        "1.541195322577144"
+       ]
+      }
+     ],
+     "prompt_number": 92
+    },
+    {
+     "cell_type": "code",
+     "collapsed": false,
+     "input": [
+      "# hold monte carlo simulated prices \n",
+      "mc_simulated_prices = []\n",
+      "\n",
+      "# compute mu and sigma for the random prices\n",
+      "%px mu = np.mean(rand)\n",
+      "%px sigma = np.std(rand)\n",
+      "\n",
+      "for j in range(len(random_prices)):\n",
+      "        %px import numpy as np\n",
+      "        %px import random\n",
+      "        %px mc_rand = random.gauss(mu, sigma)\n",
+      "        mc_simulated_prices.append(dview.gather('mc_rand'))\n",
+      "            \n",
+      "print \"Simulated Prices Using Monte Carlo on Parallel Engines: \", mc_simulated_prices\n",
+      "\n",
+      "\n"
+     ],
+     "language": "python",
+     "metadata": {},
+     "outputs": [
+      {
+       "output_type": "stream",
+       "stream": "stdout",
+       "text": [
+        "Simulated Prices Using Monte Carlo on Parallel Engines:  [[12.562009521429809, 13.342093305452858, 14.818018591855967, 13.504686025411473], [12.562009521429809, 13.342093305452858, 14.818018591855967, 13.504686025411473], [12.562009521429809, 13.342093305452858, 14.818018591855967, 13.504686025411473], [12.562009521429809, 13.342093305452858, 14.818018591855967, 13.504686025411473], [12.562009521429809, 13.342093305452858, 14.818018591855967, 13.504686025411473], [12.562009521429809, 13.342093305452858, 14.818018591855967, 13.504686025411473], [12.562009521429809, 13.342093305452858, 14.818018591855967, 13.504686025411473], [12.562009521429809, 13.342093305452858, 14.818018591855967, 13.504686025411473], [12.562009521429809, 13.342093305452858, 14.818018591855967, 13.504686025411473], [12.562009521429809, 13.342093305452858, 14.818018591855967, 13.504686025411473]]\n"
+       ]
+      }
+     ],
+     "prompt_number": 100
+    },
+    {
+     "cell_type": "code",
+     "collapsed": false,
+     "input": [
+      "mc_simulated_prices_sorted = np.sort(mc_simulated_prices)\n",
+      "print \"Sorted Monte Carlo Prices\", mc_simulated_prices_sorted"
+     ],
+     "language": "python",
+     "metadata": {},
+     "outputs": [
+      {
+       "output_type": "stream",
+       "stream": "stdout",
+       "text": [
+        "Sorted Monte Carlo Prices [[ 12.56200952  13.34209331  13.50468603  14.81801859]\n",
+        " [ 12.56200952  13.34209331  13.50468603  14.81801859]\n",
+        " [ 12.56200952  13.34209331  13.50468603  14.81801859]\n",
+        " [ 12.56200952  13.34209331  13.50468603  14.81801859]\n",
+        " [ 12.56200952  13.34209331  13.50468603  14.81801859]\n",
+        " [ 12.56200952  13.34209331  13.50468603  14.81801859]\n",
+        " [ 12.56200952  13.34209331  13.50468603  14.81801859]\n",
+        " [ 12.56200952  13.34209331  13.50468603  14.81801859]\n",
+        " [ 12.56200952  13.34209331  13.50468603  14.81801859]\n",
+        " [ 12.56200952  13.34209331  13.50468603  14.81801859]]\n"
+       ]
+      }
+     ],
+     "prompt_number": 101
+    },
+    {
+     "cell_type": "code",
+     "collapsed": false,
+     "input": [
+      "first_percentile = np.percentile(mc_simulated_prices_sorted,1)\n",
+      "print \"VAR: 99% of the time prices should stay above \", first_percentile"
+     ],
+     "language": "python",
+     "metadata": {},
+     "outputs": [
+      {
+       "output_type": "stream",
+       "stream": "stdout",
+       "text": [
+        "VAR: 99% of the time prices should stay above  12.5620095214\n"
+       ]
+      }
+     ],
+     "prompt_number": 102
+    },
+    {
+     "cell_type": "code",
+     "collapsed": false,
+     "input": [],
+     "language": "python",
+     "metadata": {},
+     "outputs": []
+    }
+   ],
+   "metadata": {}
+  }
+ ]
+}
